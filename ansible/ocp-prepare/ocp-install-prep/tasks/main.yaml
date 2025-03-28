@@ -5,10 +5,32 @@
     state: directory
   register: temp_dir
 
-- name: Clean up temp folders if exists
-  ansible.builtin.shell: "rm -rf {{temp_dir.path}}/install-run/ {{temp_dir.path}}/openshift-install* {{temp_dir.path}}/oc.tar"
-  register: output
-  changed_when: output.rc != 0
+- name: Create install-run directory
+  ansible.builtin.file:
+    path: "{{temp_dir.path}}/install-run/logs"
+    state: directory  
+
+- name: Download install-config.yaml from S3
+  amazon.aws.aws_s3:
+    bucket: "{{ s3_bucket }}"
+    object: ocp-install-prep/files/install-config.yaml
+    dest: "{{temp_dir.path}}/install-run/install-config.yaml"
+    mode: get
+    aws_access_key: "{{ s3_access_key }}"
+    aws_secret_key: "{{ s3_secret_key }}"
+    endpoint_url: "{{ s3_url }}"
+    validate_certs: "{{ s3_insecure | lower != 'yes' }}"
+
+- name: Download agent-config.yaml from S3
+  amazon.aws.aws_s3:
+    bucket: "{{ s3_bucket }}"
+    object: ocp-install-prep/files/agent-config.yaml
+    dest: "{{temp_dir.path}}/install-run/agent-config.yaml"
+    mode: get
+    aws_access_key: "{{ s3_access_key }}"
+    aws_secret_key: "{{ s3_secret_key }}"
+    endpoint_url: "{{ s3_url }}"
+    validate_certs: "{{ s3_insecure | lower != 'yes' }}"    
 
 - name: Download OpenShift installer tarball
   ansible.builtin.get_url:
@@ -19,23 +41,6 @@
   ansible.builtin.unarchive:
     src: "{{temp_dir.path}}/openshift-install-linux.tar.gz"
     dest: "{{temp_dir.path}}/"
-
-- name: Create install-run directory
-  ansible.builtin.file:
-    path: "{{temp_dir.path}}/install-run/logs"
-    state: directory
-
-- name: Write agent-config.yaml
-  copy:
-    content: "{{ agent_config_yaml }}"
-    dest: "{{temp_dir.path}}/install-run/agent-config.yaml"
-    mode: '0644'
-
-- name: Write install-config.yaml
-  copy:
-    content: "{{ install_config_yaml }}"
-    dest: "{{temp_dir.path}}/install-run/install-config.yaml"
-    mode: '0644'
 
 #- name: Check if 'manifests' folder exists inside 'files' folder of the role
 #  stat:
