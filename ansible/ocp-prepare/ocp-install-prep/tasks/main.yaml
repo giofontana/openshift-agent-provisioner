@@ -1,0 +1,64 @@
+---
+- name: Create a temp dir
+  ansible.builtin.file:
+    path: ocptemp
+    state: directory
+  register: temp_dir
+
+- name: Clean up temp folders if exists
+  ansible.builtin.shell: "rm -rf {{temp_dir.path}}/install-run/ {{temp_dir.path}}/openshift-install* {{temp_dir.path}}/oc.tar"
+  register: output
+  changed_when: output.rc != 0
+
+- name: Download OpenShift installer tarball
+  ansible.builtin.get_url:
+    url: "{{ocp_installer_url}}"
+    dest: "{{temp_dir.path}}/openshift-install-linux.tar.gz"
+
+- name: Extract OpenShift installer
+  ansible.builtin.unarchive:
+    src: "{{temp_dir.path}}/openshift-install-linux.tar.gz"
+    dest: "{{temp_dir.path}}/"
+
+- name: Create install-run directory
+  ansible.builtin.file:
+    path: "{{temp_dir.path}}/install-run/logs"
+    state: directory
+
+- name: Write agent-config.yaml
+  copy:
+    content: "{{ agent_config_yaml }}"
+    dest: "{{temp_dir.path}}/install-run/agent-config.yaml"
+    mode: '0644'
+
+- name: Write install-config.yaml
+  copy:
+    content: "{{ install_config_yaml }}"
+    dest: "{{temp_dir.path}}/install-run/install-config.yaml"
+    mode: '0644'
+
+#- name: Check if 'manifests' folder exists inside 'files' folder of the role
+#  stat:
+#    path: "{{ role_path }}/files/manifests"
+#  register: manifest_folder
+#
+#- name: "Run OpenShift install to create PXE files. Run tail -f {{temp_dir.path}}/install-run/logs/1-agent-create-manifests.log to follow the logs."
+#  ansible.builtin.shell: "./openshift-install agent create cluster-manifests --dir={{temp_dir.path}}/install-run --log-level=debug > {{temp_dir.path}}/install-run/logs/1-agent-create-manifests.log 2>&1"
+#  args:
+#    chdir: "{{temp_dir.path}}"
+#  when: manifest_folder.stat.exists
+#
+#- name: "Copy contents of 'manifests' to {{temp_dir.path}}/install-run/openshift if exists"
+#  copy:
+#    src: "{{ role_path }}/files/manifests/"
+#    dest: /tmp/install-run/cluster-manifests/
+#    mode: '0644'
+#  when: manifest_folder.stat.exists
+
+- name: "Run OpenShift install to create PXE files. Run tail -f {{temp_dir.path}}/install-run/logs/1-agent-create-pxe-files.log to follow the logs."
+  ansible.builtin.shell: |
+    cd {{temp_dir.path}}
+    ls -lhs .
+    ./openshift-install agent create pxe-files --dir=./install-run --log-level=debug
+#  args:
+#    chdir: "{{temp_dir.path}}"

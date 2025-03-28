@@ -1,0 +1,9 @@
+---
+- name: Deploy OpenShift Preparation
+  hosts: localhost
+  gather_facts: false
+  roles:
+    - role: ocp-install-prep
+      tags:
+        - ocp-install-prep
+        
