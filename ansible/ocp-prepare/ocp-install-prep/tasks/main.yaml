@@ -1,7 +1,7 @@
 ---
 - debug:
     msg: "{{ s3_insecure }}"
-    
+
 - name: Create a temp dir
   ansible.builtin.file:
     path: ocptemp
@@ -22,7 +22,8 @@
     aws_access_key: "{{ s3_access_key }}"
     aws_secret_key: "{{ s3_secret_key }}"
     endpoint_url: "{{ s3_url }}"
-    validate_certs: "{{ s3_insecure | lower != 'yes' }}"
+    #validate_certs: "{{ s3_insecure | lower != 'yes' }}"
+    validate_certs: false
 
 - name: Download agent-config.yaml from S3
   amazon.aws.aws_s3:
@@ -33,7 +34,8 @@
     aws_access_key: "{{ s3_access_key }}"
     aws_secret_key: "{{ s3_secret_key }}"
     endpoint_url: "{{ s3_url }}"
-    validate_certs: "{{ s3_insecure | lower != 'yes' }}"    
+    #validate_certs: "{{ s3_insecure | lower != 'yes' }}"    
+    validate_certs: false
 
 - name: Download OpenShift installer tarball
   ansible.builtin.get_url:
