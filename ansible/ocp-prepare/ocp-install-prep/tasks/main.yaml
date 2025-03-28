@@ -1,4 +1,7 @@
 ---
+- debug:
+    msg: "{{ s3_insecure }}"
+    
 - name: Create a temp dir
   ansible.builtin.file:
     path: ocptemp
